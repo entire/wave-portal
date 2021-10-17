@@ -21,9 +21,9 @@ task("accounts", "Prints the list of accounts", async (args, hre) => {
 require("hardhat-deploy");
 require('dotenv').config();
 
-const key = process.env.WALLET_PRIVATE_KEY
+const key = process.env.WALLET_PRIVATE_KEY;
 
-export default {
+module.exports = {
   solidity: "0.8.4",
   networks: {
     fantomTestnet: {
@@ -39,7 +39,8 @@ export default {
       accounts: [key],
     },
     rinkeby: {
-      url: process.env.ALCHEMY_HTTP_URL,
+      url: 'https://eth-rinkeby.alchemyapi.io/v2/dAU9V3obwixqxzt3Yiw1JNNwWlyrOeZW',
+      gasPrice: 1600000000,
       accounts: [key],
     },
   }
