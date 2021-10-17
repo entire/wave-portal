@@ -56,16 +56,27 @@ const App = () => {
   const wave = async () => {
     try {
       const { ethereum } = window;
-
+      console.log("wave starting...");
       if (ethereum) {
         // get the provider
         const provider = new ethers.providers.Web3Provider(ethereum);
+        console.log("got provider:", provider);
+
+
+        const { chainId } = await provider.getNetwork();
+        console.log("your current chainId: ", chainId);
+
         // get the signer
         const signer = provider.getSigner();
+        console.log("got signer:", signer);
 
         // here is the waveContract
         const wavePortalContract = new ethers.Contract(contractAddress, contractABI, signer);
-        let count = await wavePortalContract.getTotalWaves();
+        console.log("got contract");
+        const gasPrice = provider.getGasPrice(); 
+        const opts = { gasPrice: gasPrice, gasLimit: 85000, nonce: 45, value: 0 };
+        let count = await wavePortalContract.getTotalWaves(opts);
+        console.log("contract called getTotalWaves");
         console.log("Retrieved total wave count...", count.toNumber());
 
         // write to contract
