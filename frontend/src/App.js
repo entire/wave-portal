@@ -5,7 +5,6 @@ import abi from './utils/WavePortal.json';
 
 const App = () => {
   const [currentAccount, setCurrentAccount] = useState("");
-  const contractAddress = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
   const contractABI = abi.abi;
 
   const checkIfWalletIsConnected = async () => {
@@ -70,6 +69,8 @@ const App = () => {
         const signer = provider.getSigner();
         console.log("got signer:", signer);
 
+        const contractAddress = getContractByChainId(chainId);
+
         // here is the waveContract
         const wavePortalContract = new ethers.Contract(contractAddress, contractABI, signer);
         console.log("got contract");
@@ -127,6 +128,17 @@ const App = () => {
       </div>
     </div>
   );
+}
+
+function getContractByChainId(id) {
+  if (id === 4002) { // fantomTestnet
+    return "0x8b25b442e481e5d50066e4b8c201f180ecb33cfb";
+  } else if (id === 4) {
+    return "0x59Ff8E11C4aFB56a323e0F71363Fb57CFea6F4f0";
+  } else {
+    console.log("getContractByChainId, unknownChain: ", id);
+    return "Unknown chain!"
+  }
 }
 
 export default App
