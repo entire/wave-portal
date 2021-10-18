@@ -17,18 +17,14 @@ const main = async () => {
     const [owner, randomPerson] = await hre.ethers.getSigners();
     console.log("Contract deployed by:", owner.address);
 
-    // get current wave count
-    let waveCount;
-    waveCount = await waveContract.connect(owner).getTotalWaves();
-    console.log("current wave count number: ", waveCount.toNumber());
-
-    // call first wave
-    let waveTxn = await waveContract.connect(owner).wave('a message!');
+    // try two waves
+    const opts = { gasPrice: 300000, gasLimit: 85000, nonce: 5, value: 0 };
+    const waveTxn = await waveContract.connect(owner).wave('wave #1', opts);
     await waveTxn.wait() // wait for transaction to be mined
-
-    // call some another wave
-    waveTxn = await waveContract.connect(owner).wave('another message! from random person');
-    await waveTxn.wait() // wait for transaction to be mined
+    console.log("first wave finished");
+    const waveTxn2 = await waveContract.connect(randomPerson).wave('wave #2', opts);
+    await waveTxn2.wait() // wait for transaction to be mined
+    console.log("second wave finished");
 
     // get contract balance to see what happened
     contractBalance = await hre.ethers.provider.getBalance(waveContract.address);

@@ -70,7 +70,7 @@ const App = () => {
         // get the signer and contract
         const signer = provider.getSigner();
         console.log("got signer:", signer);
-        const contractAddress = getContractByChainId(chainId);
+          const contractAddress = getContractByChainId(chainId);
 
         // here is the waveContract
         const wavePortalContract = new ethers.Contract(contractAddress, contractABI, signer);
@@ -82,7 +82,7 @@ const App = () => {
         console.log("Retrieved total wave count...", count.toNumber());
 
         // write to contract
-        const waveTxn = await wavePortalContract.wave("hi");
+        const waveTxn = await wavePortalContract.wave("hi", { gasLimit: 300000 });
         console.log("Mining...", waveTxn.hash);
 
         await waveTxn.wait();
@@ -114,15 +114,10 @@ const App = () => {
         const contractAddress = getContractByChainId(chainId);
         const wavePortalContract = new ethers.Contract(contractAddress, contractABI, signer);
 
-        /*
-         * Call the getAllWaves method from your Smart Contract
-         */
+        // Call the getAllWaves method from your Smart Contract
         const waves = await wavePortalContract.getAllWaves();
         
-        /*
-         * We only need address, timestamp, and message in our UI so let's
-         * pick those out
-         */
+        // We only need address, timestamp, and message in our UI so let's pick those out
         let wavesCleaned = [];
         waves.forEach(wave => {
           wavesCleaned.push({
@@ -132,10 +127,19 @@ const App = () => {
           });
         });
 
-        /*
-         * Store our data in React State
-         */
+        // Store our data in React State
         setAllWaves(wavesCleaned);
+        
+        // listen to wave events
+        wavePortalContract.on("NewWave", ( from, timestamp, message ) => {
+          console.log("new wave", from, timestamp, message);
+
+          setAllWaves(prevState => [...prevState, {
+            address: from,
+            timestamp: new Date(timestamp * 1000),
+            messsage: message,
+          }]);
+        });
       } else {
         console.log("Ethereum object doesn't exist!")
       }
@@ -159,11 +163,11 @@ const App = () => {
         </div>
 
         <div className="bio">
-          i am july 
+          try clicking the button to wave
         </div>
 
         <button className="waveButton" onClick={wave}>
-          wave you fool
+          ~ ~ ~ W A V E ~ ~ ~
         </button>
 
         { !currentAccount && (
@@ -187,9 +191,9 @@ const App = () => {
 
 function getContractByChainId(id) {
   if (id === 4002) { // fantomTestnet
-    return "0x7FB19A094C2c7376932Aa5Ea9e2b446841775259";
+    return "0x0F54CBBbC99c1F282be66201F61A6db1d3371ebE";
   } else if (id === 4) { // rinkeby
-    return "0xdDaEB33cb49bb96Ed59C45050086960B660EAee2";
+    return "0x8b25B442e481E5D50066E4B8C201f180eCB33cfb";
   } else {
     console.log("getContractByChainId, unknownChain: ", id);
     return "Unknown chain!"
