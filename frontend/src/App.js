@@ -6,6 +6,7 @@ import abi from './utils/WavePortal.json';
 const App = () => {
   const [currentAccount, setCurrentAccount] = useState("");
   const contractABI = abi.abi;
+  const [allWaves, setAllWaves] = useState([]);
 
   const checkIfWalletIsConnected = async () => {
     try {
@@ -27,6 +28,7 @@ const App = () => {
         const account = accounts[0];
         console.log("Found an authorized account:", account);
         setCurrentAccount(account)
+        await getAllWaves();
       } else {
         console.log("No authorized account found")
       }
@@ -61,14 +63,13 @@ const App = () => {
         const provider = new ethers.providers.Web3Provider(ethereum);
         console.log("got provider:", provider);
 
-
+        // get chainId
         const { chainId } = await provider.getNetwork();
         console.log("your current chainId: ", chainId);
 
-        // get the signer
+        // get the signer and contract
         const signer = provider.getSigner();
         console.log("got signer:", signer);
-
         const contractAddress = getContractByChainId(chainId);
 
         // here is the waveContract
@@ -81,7 +82,7 @@ const App = () => {
         console.log("Retrieved total wave count...", count.toNumber());
 
         // write to contract
-        const waveTxn = await wavePortalContract.wave();
+        const waveTxn = await wavePortalContract.wave("hi");
         console.log("Mining...", waveTxn.hash);
 
         await waveTxn.wait();
@@ -97,6 +98,51 @@ const App = () => {
       console.log(err);
     }
   };
+
+  const getAllWaves = async () => {
+    try {
+      const { ethereum } = window;
+      if (ethereum) {
+         // get chainId
+        const provider = new ethers.providers.Web3Provider(ethereum);
+        const { chainId } = await provider.getNetwork();
+        console.log("your current chainId: ", chainId);
+
+        // get the signer and contract
+        const signer = provider.getSigner();
+        console.log("got signer:", signer);
+        const contractAddress = getContractByChainId(chainId);
+        const wavePortalContract = new ethers.Contract(contractAddress, contractABI, signer);
+
+        /*
+         * Call the getAllWaves method from your Smart Contract
+         */
+        const waves = await wavePortalContract.getAllWaves();
+        
+        /*
+         * We only need address, timestamp, and message in our UI so let's
+         * pick those out
+         */
+        let wavesCleaned = [];
+        waves.forEach(wave => {
+          wavesCleaned.push({
+            address: wave.waver,
+            timestamp: new Date(wave.timestamp * 1000),
+            message: wave.message
+          });
+        });
+
+        /*
+         * Store our data in React State
+         */
+        setAllWaves(wavesCleaned);
+      } else {
+        console.log("Ethereum object doesn't exist!")
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  }
   
   /*
   * This runs our function when the page loads.
@@ -125,6 +171,15 @@ const App = () => {
             Connect Wallet
           </button>
         )}
+
+        {allWaves.map((wave, index) => {
+          return (
+            <div key={index} style={{ backgroundColor: "OldLace", marginTop: "16px", padding: "8px" }}>
+              <div>Address: {wave.address}</div>
+              <div>Time: {wave.timestamp.toString()}</div>
+              <div>Message: {wave.message}</div>
+            </div>)
+        })}
       </div>
     </div>
   );
@@ -132,9 +187,9 @@ const App = () => {
 
 function getContractByChainId(id) {
   if (id === 4002) { // fantomTestnet
-    return "0x8b25b442e481e5d50066e4b8c201f180ecb33cfb";
-  } else if (id === 4) {
-    return "0x59Ff8E11C4aFB56a323e0F71363Fb57CFea6F4f0";
+    return "0x7FB19A094C2c7376932Aa5Ea9e2b446841775259";
+  } else if (id === 4) { // rinkeby
+    return "0xdDaEB33cb49bb96Ed59C45050086960B660EAee2";
   } else {
     console.log("getContractByChainId, unknownChain: ", id);
     return "Unknown chain!"

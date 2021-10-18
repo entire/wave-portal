@@ -1,24 +1,42 @@
 const main = async () => {
-    const [owner, randomPerson] = await hre.ethers.getSigners();
+    // setup and deploy contract
     const waveContractFactory = await hre.ethers.getContractFactory("WavePortal");
-    const waveContract = await waveContractFactory.deploy();
+    const waveContract = await waveContractFactory.deploy({
+      value: hre.ethers.utils.parseEther('0.1'),
+    });
     await waveContract.deployed();
+    let contractBalance = await hre.ethers.provider.getBalance(
+        waveContract.address,
+    );
 
-    console.log("Contract deployed to:", waveContract.address);
+    // print contract address and balance
+    console.log("Contract address is:", waveContract.address);
+    console.log("Contract balance:", hre.ethers.utils.formatEther(contractBalance));
+
+    // get signer
+    const [owner, randomPerson] = await hre.ethers.getSigners();
     console.log("Contract deployed by:", owner.address);
 
+    // get current wave count
     let waveCount;
-    waveCount = await waveContract.getTotalWaves();
+    waveCount = await waveContract.connect(owner).getTotalWaves();
+    console.log("current wave count number: ", waveCount.toNumber());
 
-    let waveTxn = await waveContract.wave();
-    await waveTxn.wait();
+    // call first wave
+    let waveTxn = await waveContract.connect(owner).wave('a message!');
+    await waveTxn.wait() // wait for transaction to be mined
 
-    waveCount = await waveContract.getTotalWaves();
+    // call some another wave
+    waveTxn = await waveContract.connect(owner).wave('another message! from random person');
+    await waveTxn.wait() // wait for transaction to be mined
 
-    waveTxn = await waveContract.connect(randomPerson).wave();
-    await waveTxn.wait();
+    // get contract balance to see what happened
+    contractBalance = await hre.ethers.provider.getBalance(waveContract.address);
+    console.log("Latest Contract balance:", hre.ethers.utils.formatEther(contractBalance));
 
-    waveCount = await waveContract.getTotalWaves();
+    // get all waves
+    let allWaves = await waveContract.connect(owner).getAllWaves();
+    console.log(allWaves);
 };
 
 const runMain = async () => {
